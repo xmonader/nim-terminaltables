@@ -35,6 +35,9 @@ type Style = object
   cellEdgeRight*: string
   dashLineLeft*: string
   dashLineRight*: string
+  dashLineColSeparatorTopRow*: string
+  dashLineColSeparatorLastRow*: string
+  dashLineColSeparator*: string
   topLeft*: string
   topRight*: string
   topRowSeparator*: string
@@ -42,8 +45,8 @@ type Style = object
   bottomLeft*: string
   bottomRight*: string
 
-let asciiStyle = Style(rowSeparator:"-", colSeparator:"|", cellEdgeLeft:"*", cellEdgeRight:"*", cellEdge:"*", topLeft:"*", topRight:"*", bottomLeft:"*", bottomRight:"*", topRowSeparator:"-", bottomRowSeparator:"-", dashLineLeft:"|", dashLineRight:"|")
-let unicodeStyle = Style(rowSeparator:"─", colSeparator:"│", cellEdgeLeft:"├", cellEdgeRight: "┤", topLeft:"┌", topRight:"┐", bottomLeft:"└", bottomRight:"┘", topRowSeparator:"┬", bottomRowSeparator:"┴", dashLineLeft:"├", dashLineRight:"┤")
+let asciiStyle = Style(rowSeparator:"-", colSeparator:"|", cellEdgeLeft:"*", cellEdgeRight:"*", cellEdge:"*", topLeft:"*", topRight:"*", bottomLeft:"*", bottomRight:"*", topRowSeparator:"-", bottomRowSeparator:"-", dashLineLeft:"|", dashLineRight:"|", dashLineColSeparatorLastRow:"*", dashLineColSeparatorTopRow:"*", dashLineColSeparator:"*")
+let unicodeStyle = Style(rowSeparator:"─", colSeparator:"│", cellEdgeLeft:"├", cellEdgeRight: "┤", topLeft:"┌", topRight:"┐", bottomLeft:"└", bottomRight:"┘", topRowSeparator:"┬", bottomRowSeparator:"┴", dashLineLeft:"├", dashLineRight:"┤",dashLineColSeparatorLastRow:"┴", dashLineColSeparatorTopRow:"┬", dashLineColSeparator:"┼")
 
 
 type TerminalTable* = object 
@@ -138,24 +141,25 @@ proc calculateWidths(this: ref TerminalTable) =
   
 proc oneLine(this: ref TerminalTable): string =
 
-  result &= this.style.dashLineLeft
-  for w in this.widths:
-    result &= this.style.rowSeparator.repeat(w) & this.style.dashLineRight
-  result &= "\n"
+  result &= this.style.cellEdgeLeft
+  for w in this.widths[0..^2]:
+    result &= this.style.rowSeparator.repeat(w) & this.style.dashLineColSeparator
+  result &= this.style.rowSeparator.repeat(this.widths[^1]) & this.style.dashLineRight & "\n"
 
   
 proc oneLineTop(this: ref TerminalTable): string =
   result &= this.style.topLeft
-  for w in this.widths[0..^1]:
-    result &= this.style.rowSeparator.repeat(w) & this.style.topRight
-  result &= "\n"
+  for w in this.widths[0..^2]:
+    result &= this.style.rowSeparator.repeat(w) & this.style.dashLineColSeparatorTopRow 
+
+  result &= this.style.rowSeparator.repeat(this.widths[^1]) & this.style.topRight & "\n"
   
 proc oneLineBottom(this: ref TerminalTable): string =
   result &= this.style.bottomLeft
-  for w in this.widths[0..^1]:
-    result &= this.style.rowSeparator.repeat(w) & this.style.bottomRight
-  result &= "\n"
-  
+  for w in this.widths[0..^2]:
+    result &= this.style.rowSeparator.repeat(w) & this.style.dashLineColSeparatorLastRow 
+
+  result &= this.style.rowSeparator.repeat(this.widths[^1]) & this.style.bottomRight & "\n"
 
 proc render*(this: ref TerminalTable): string =
   this.calculateWidths()
@@ -181,15 +185,11 @@ proc render*(this: ref TerminalTable): string =
       result &= this.style.colSeparator & $cell & " ".repeat(this.widths[colidx]-len(cell)) 
     result &= this.style.colSeparator
     result &= "\n"
-    if this.separateRows and ridx < this.rows.len: 
-      result &= this.oneLineBottom()
-    elif this.separateRows and ridx == this.rows.len:
-      result &= this.oneLineBottom()
-    # finish row
-  
-  # don't duplicate the finishing line if it's already printed in case of this.separateRows
-#  if not this.separateRows:
-#      result &= this.oneLineBottom()
+    if this.separateRows and ridx < this.rows.len-1:
+        result &= this.oneLine()
+
+  result &= this.oneLineBottom()
+    
   return result
 
 proc printTable*(this: ref TerminalTable) =
@@ -250,6 +250,7 @@ when isMainModule:
   # t.style.cellEdge = "*"
 
   let t2 = newUnicodeTable()
+  # t2.separateRows = true
   t2.setHeaders(@[newCell("ID", pad=5), newCell("Name", rightpad=10), newCell("Fav animal", pad=2), newCell("Date", 5)])
   t2.addRow(@["1", "xmonader", "Cat, Dog", "2018-10-22"])
   t2.addRow(@["2", "ahmed", "Shark", "2015-12-6"])
