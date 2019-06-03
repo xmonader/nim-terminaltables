@@ -27,7 +27,7 @@ proc len*(this:ref Cell): int =
 proc `$`*(this:ref Cell): string =
   result = " ".repeat(this.leftpad) & this.text & " ".repeat(this.rightpad)
 
-type Style = object
+type Style* = object
   rowSeparator*: string
   colSeparator*: string 
   cellEdgeLeft*: string
@@ -44,13 +44,13 @@ type Style = object
   bottomLeft*: string
   bottomRight*: string
 
-let asciiStyle =   Style(rowSeparator:"-", colSeparator:"|", cellEdgeLeft:"+", cellEdgeRight:"+", topLeft:"+", topRight:"+", bottomLeft:"-", bottomRight:"-", topRowSeparator:"-", bottomRowSeparator:"-", dashLineLeft:"+", dashLineRight:"+", dashLineColSeparatorLastRow:"+", dashLineColSeparatorTopRow:"+", dashLineColSeparator:"+")
-let unicodeStyle = Style(rowSeparator:"─", colSeparator:"│", cellEdgeLeft:"├", cellEdgeRight:"┤", topLeft:"┌", topRight:"┐", bottomLeft:"└", bottomRight:"┘", topRowSeparator:"┬", bottomRowSeparator:"┴", dashLineLeft:"├", dashLineRight:"┤", dashLineColSeparatorLastRow:"┴", dashLineColSeparatorTopRow:"┬", dashLineColSeparator:"┼")
+let asciiStyle* =   Style(rowSeparator:"-", colSeparator:"|", cellEdgeLeft:"+", cellEdgeRight:"+", topLeft:"+", topRight:"+", bottomLeft:"-", bottomRight:"-", topRowSeparator:"-", bottomRowSeparator:"-", dashLineLeft:"+", dashLineRight:"+", dashLineColSeparatorLastRow:"+", dashLineColSeparatorTopRow:"+", dashLineColSeparator:"+")
+let unicodeStyle* = Style(rowSeparator:"─", colSeparator:"│", cellEdgeLeft:"├", cellEdgeRight:"┤", topLeft:"┌", topRight:"┐", bottomLeft:"└", bottomRight:"┘", topRowSeparator:"┬", bottomRowSeparator:"┴", dashLineLeft:"├", dashLineRight:"┤", dashLineColSeparatorLastRow:"┴", dashLineColSeparatorTopRow:"┬", dashLineColSeparator:"┼")
 
 type TerminalTable* = object 
   rows: seq[seq[string]]
   headers: seq[ref Cell]
-  style: Style
+  style*: Style
   widths: seq[int]
   suggestedWidths: seq[int]
   tableWidth*: int
