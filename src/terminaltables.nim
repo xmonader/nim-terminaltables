@@ -46,6 +46,7 @@ type Style* = object
 
 let asciiStyle* =   Style(rowSeparator:"-", colSeparator:"|", cellEdgeLeft:"+", cellEdgeRight:"+", topLeft:"+", topRight:"+", bottomLeft:"-", bottomRight:"-", topRowSeparator:"-", bottomRowSeparator:"-", dashLineLeft:"+", dashLineRight:"+", dashLineColSeparatorLastRow:"+", dashLineColSeparatorTopRow:"+", dashLineColSeparator:"+")
 let unicodeStyle* = Style(rowSeparator:"─", colSeparator:"│", cellEdgeLeft:"├", cellEdgeRight:"┤", topLeft:"┌", topRight:"┐", bottomLeft:"└", bottomRight:"┘", topRowSeparator:"┬", bottomRowSeparator:"┴", dashLineLeft:"├", dashLineRight:"┤", dashLineColSeparatorLastRow:"┴", dashLineColSeparatorTopRow:"┬", dashLineColSeparator:"┼")
+let noStyle* = Style(rowSeparator:"", colSeparator:"", cellEdgeLeft:"", cellEdgeRight:"", topLeft:"", topRight:"", bottomLeft:"", bottomRight:"", topRowSeparator:"", bottomRowSeparator:"", dashLineLeft:"", dashLineRight:"", dashLineColSeparatorLastRow:"", dashLineColSeparatorTopRow:"", dashLineColSeparator:"")
 
 type TerminalTable* = object 
   rows: seq[seq[string]]
@@ -251,4 +252,11 @@ when isMainModule:
   let testStyle =  Style(rowSeparator:"┈", colSeparator:"┇", cellEdgeLeft:"├", cellEdgeRight:"┤", topLeft:"┏", topRight:"┓", bottomLeft:"└", bottomRight:"┘", topRowSeparator:"┬", bottomRowSeparator:"┴", dashLineLeft:"├", dashLineRight:"┤", dashLineColSeparatorLastRow:"┴", dashLineColSeparatorTopRow:"┬", dashLineColSeparator:"┼")
 
   t2.style = testStyle
+  printTable(t2)
+
+  t2.style = noStyle
+  printTable(t2)
+
+  t2.setHeaders(@[newCell("ID", pad=0), newCell("Name", pad=0), newCell("Fav animal", pad=0), newCell("Date", 0)])
+
   printTable(t2)
