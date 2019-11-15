@@ -200,7 +200,7 @@ proc printTable*(this: ref TerminalTable) =
 when not defined(js):
   import os, osproc
   proc termColumns(): int =
-    if os.existsEnv("COLUMNS") and getEnv("COLUMNS").isDigit():
+    if os.existsEnv("COLUMNS") and getEnv("COLUMNS")[0].isDigit():
         return parseInt(getEnv("COLUMNS"))
     else:
       if findExe("tput") != "":
