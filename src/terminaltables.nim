@@ -1,5 +1,5 @@
 import strformat, strutils
-
+from unicode import runeLen
 
 type Cell* = object
   leftpad*: int
@@ -22,7 +22,7 @@ proc newCellFromAnother(another: ref Cell): ref Cell =
   result = newCell(text=another.text, leftpad=another.leftpad, rightpad=another.rightpad)
 
 proc len*(this:ref Cell): int =
-  result = this.leftpad + this.text.len + this.rightpad
+  result = this.leftpad + this.text.runeLen + this.rightpad
 
 proc `$`*(this:ref Cell): string =
   result = " ".repeat(this.leftpad) & this.text & " ".repeat(this.rightpad)
