@@ -71,7 +71,7 @@ proc newAsciiTable*(style: Style=asciiStyle): ref TerminalTable =
   result = newTerminalTable()
 
 proc newUnicodeTable*(style: Style=unicodeStyle): ref TerminalTable = 
-  result = newTerminalTable(unicodeStyle)
+  result = newTerminalTable(style)
 
 proc columnsCount*(this: ref TerminalTable): int =
   result = this.headers.len
