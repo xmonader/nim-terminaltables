@@ -1,35 +1,33 @@
 import strformat, strutils
 from unicode import runeLen
 
-type Cell* = object
+type Cell* = ref object
   leftpad*: int
   rightpad: int
   pad*: int
   text*: string
 
-proc newCell*(text: string, leftpad=1, rightpad=1, pad=0): ref Cell =
-  result = new Cell
-  result.pad = pad
+proc newCell*(text: string, leftpad = 1, rightpad = 1, pad = 0): Cell =
+  result = Cell(pad: pad, text: text)
   if pad != 0:
     result.leftpad = pad
     result.rightpad = pad
   else:
     result.leftpad = leftpad
     result.rightpad = rightpad
-  result.text = text
 
-proc newCellFromAnother(another: ref Cell): ref Cell =
-  result = newCell(text=another.text, leftpad=another.leftpad, rightpad=another.rightpad)
+proc newCellFromAnother(another: Cell): Cell =
+  result = newCell(another.text, another.leftpad, another.rightpad)
 
-proc len*(this:ref Cell): int =
+proc len*(this: Cell): int =
   result = this.leftpad + this.text.runeLen + this.rightpad
 
-proc `$`*(this:ref Cell): string =
+proc `$`*(this:Cell): string =
   result = " ".repeat(this.leftpad) & this.text & " ".repeat(this.rightpad)
 
 type Style* = object
   rowSeparator*: string
-  colSeparator*: string 
+  colSeparator*: string
   cellEdgeLeft*: string
   cellEdgeRight*: string
   dashLineLeft*: string
@@ -44,72 +42,84 @@ type Style* = object
   bottomLeft*: string
   bottomRight*: string
 
-let asciiStyle* =   Style(rowSeparator:"-", colSeparator:"|", cellEdgeLeft:"+", cellEdgeRight:"+", topLeft:"+", topRight:"+", bottomLeft:"-", bottomRight:"-", topRowSeparator:"-", bottomRowSeparator:"-", dashLineLeft:"+", dashLineRight:"+", dashLineColSeparatorLastRow:"+", dashLineColSeparatorTopRow:"+", dashLineColSeparator:"+")
-let unicodeStyle* = Style(rowSeparator:"─", colSeparator:"│", cellEdgeLeft:"├", cellEdgeRight:"┤", topLeft:"┌", topRight:"┐", bottomLeft:"└", bottomRight:"┘", topRowSeparator:"┬", bottomRowSeparator:"┴", dashLineLeft:"├", dashLineRight:"┤", dashLineColSeparatorLastRow:"┴", dashLineColSeparatorTopRow:"┬", dashLineColSeparator:"┼")
-let noStyle* = Style(rowSeparator:"", colSeparator:"", cellEdgeLeft:"", cellEdgeRight:"", topLeft:"", topRight:"", bottomLeft:"", bottomRight:"", topRowSeparator:"", bottomRowSeparator:"", dashLineLeft:"", dashLineRight:"", dashLineColSeparatorLastRow:"", dashLineColSeparatorTopRow:"", dashLineColSeparator:"")
+const
+  asciiStyle* = Style(
+    rowSeparator: "-", colSeparator: "|",
+    cellEdgeLeft: "+", cellEdgeRight: "+",
+    topLeft: "+", topRight: "+",
+    bottomLeft: "-", bottomRight: "-",
+    topRowSeparator: "-", bottomRowSeparator: "-",
+    dashLineLeft: "+", dashLineRight: "+",
+    dashLineColSeparatorLastRow: "+", dashLineColSeparatorTopRow: "+",
+    dashLineColSeparator: "+"
+  )
 
-type TerminalTable* = object 
+  unicodeStyle* = Style(
+    rowSeparator: "─", colSeparator: "│",
+    cellEdgeLeft: "├", cellEdgeRight: "┤",
+    topLeft: "┌", topRight: "┐",
+    bottomLeft: "└", bottomRight: "┘",
+    topRowSeparator: "┬", bottomRowSeparator: "┴",
+    dashLineLeft: "├", dashLineRight: "┤",
+    dashLineColSeparatorLastRow: "┴", dashLineColSeparatorTopRow: "┬",
+    dashLineColSeparator: "┼"
+  )
+
+  noStyle* = Style()
+
+type TerminalTable* = ref object
   rows: seq[seq[string]]
-  headers: seq[ref Cell]
+  headers: seq[Cell]
   style*: Style
   widths: seq[int]
   suggestedWidths: seq[int]
   tableWidth*: int
   separateRows*: bool
 
-proc newTerminalTable*(style: Style=asciiStyle): ref TerminalTable =
-  result = new TerminalTable
-  result.style = style
-  result.tableWidth=0
-  result.separateRows=true
-  result.widths = newSeq[int]()
-  result.suggestedWidths = newSeq[int]()
-  result.rows = newSeq[seq[string]]()
-  result.headers = newSeq[ref Cell]()
+proc newTerminalTable*(style = asciiStyle): TerminalTable =
+  TerminalTable(
+    style: style,
+    tableWidth: 0,
+    separateRows: true
+  )
 
-proc newAsciiTable*(style: Style=asciiStyle): ref TerminalTable =
+proc newAsciiTable*(style = asciiStyle): TerminalTable =
   result = newTerminalTable()
 
-proc newUnicodeTable*(style: Style=unicodeStyle): ref TerminalTable = 
+proc newUnicodeTable*(style = unicodeStyle): TerminalTable =
   result = newTerminalTable(style)
 
-proc columnsCount*(this: ref TerminalTable): int =
+proc columnsCount*(this: TerminalTable): int =
   result = this.headers.len
 
-proc setHeaders*(this: ref TerminalTable, headers:seq[string]) =
+proc setHeaders*(this: TerminalTable, headers: seq[string]) =
   for s in headers:
     var cell = newCell(s)
     this.headers.add(cell)
 
-proc setHeaders*(this: ref TerminalTable, headers: seq[ref Cell]) = 
+proc setHeaders*(this: TerminalTable, headers: seq[Cell]) =
   this.headers = headers
 
-proc setRows*(this: ref TerminalTable, rows:seq[seq[string]]) =
+proc setRows*(this: TerminalTable, rows: seq[seq[string]]) =
   this.rows = rows
 
-proc addRows*(this: ref TerminalTable, rows:seq[seq[string]]) =
-  this.rows = rows
+proc addRows*(this: TerminalTable, rows: seq[seq[string]]) =
+  this.rows.add(rows)
 
-proc addRow*(this: ref TerminalTable, row:seq[string]) =
+proc addRow*(this: TerminalTable, row: seq[string]) =
   this.rows.add(row)
 
-proc suggestWidths*(this: ref TerminalTable, widths:seq[int]) = 
+proc suggestWidths*(this: TerminalTable, widths: seq[int]) =
   this.suggestedWidths = widths
 
-proc reset*(this:ref TerminalTable) =
-  this.style = asciiStyle
-  this.tableWidth=0
-  this.separateRows=true
-  this.widths = newSeq[int]()
-  this.suggestedWidths = newSeq[int]()
-  this.rows = newSeq[seq[string]]()
-  this.headers = newSeq[ref Cell]()
+proc reset*(this: TerminalTable) =
+  this[] = newTerminalTable()[]
 
-proc calculateWidths(this: ref TerminalTable) =
+proc calculateWidths(this: TerminalTable) =
   var colsWidths = newSeq[int]()
   if this.suggestedWidths.len == 0:
     for h in this.headers:
-      colsWidths.add(h.len) 
+      colsWidths.add(h.len)
   else:
     colsWidths = this.suggestedWidths
   
@@ -123,7 +133,7 @@ proc calculateWidths(this: ref TerminalTable) =
   let sizeForCol = (this.tablewidth/len(this.headers)).toInt()
   var lenHeaders = 0
   for w in colsWidths:
-    lenHeaders += w 
+    lenHeaders += w
 
   if this.tablewidth > lenHeaders:
     if this.suggestedWidths.len == 0:
@@ -136,33 +146,32 @@ proc calculateWidths(this: ref TerminalTable) =
       sumSuggestedWidths += s
     
     if lenHeaders > sumSuggestedWidths:
-      raise newException(ValueError, fmt"sum of {this.suggestedWidths} = {sumSuggestedWidths} and it's less than required length {lenHeaders}")      
+      raise newException(ValueError, fmt"sum of {this.suggestedWidths} = {sumSuggestedWidths} and it's less than required length {lenHeaders}")
   
   this.widths = colsWidths
-  
-proc oneLine(this: ref TerminalTable): string =
 
+proc oneLine(this: TerminalTable): string =
   result &= this.style.cellEdgeLeft
   for w in this.widths[0..^2]:
     result &= this.style.rowSeparator.repeat(w) & this.style.dashLineColSeparator
   result &= this.style.rowSeparator.repeat(this.widths[^1]) & this.style.dashLineRight & "\n"
 
-  
-proc oneLineTop(this: ref TerminalTable): string =
+
+proc oneLineTop(this: TerminalTable): string =
   result &= this.style.topLeft
   for w in this.widths[0..^2]:
-    result &= this.style.rowSeparator.repeat(w) & this.style.dashLineColSeparatorTopRow 
+    result &= this.style.rowSeparator.repeat(w) & this.style.dashLineColSeparatorTopRow
 
   result &= this.style.rowSeparator.repeat(this.widths[^1]) & this.style.topRight & "\n"
-  
-proc oneLineBottom(this: ref TerminalTable): string =
+
+proc oneLineBottom(this: TerminalTable): string =
   result &= this.style.bottomLeft
   for w in this.widths[0..^2]:
-    result &= this.style.rowSeparator.repeat(w) & this.style.dashLineColSeparatorLastRow 
+    result &= this.style.rowSeparator.repeat(w) & this.style.dashLineColSeparatorLastRow
 
   result &= this.style.rowSeparator.repeat(this.widths[^1]) & this.style.bottomRight & "\n"
 
-proc render*(this: ref TerminalTable): string =
+proc render*(this: TerminalTable): string =
   this.calculateWidths()
   # top border
   result &= this.oneLineTop()
@@ -173,7 +182,7 @@ proc render*(this: ref TerminalTable): string =
   
   result &= this.style.colSeparator
   result &= "\n"
-  # finish headers 
+  # finish headers
 
   # line after headers
   result &= this.oneline()
@@ -182,18 +191,19 @@ proc render*(this: ref TerminalTable): string =
   for ridx,r in this.rows:
     # start row
     for colidx, c in r:
-      let cell = newCell(c, leftpad=this.headers[colidx].leftpad, rightpad=this.headers[colidx].rightpad)
-      result &= this.style.colSeparator & $cell & " ".repeat(this.widths[colidx]-len(cell)) 
+      let cell = newCell(c,
+        leftpad = this.headers[colidx].leftpad,
+        rightpad = this.headers[colidx].rightpad
+      )
+      result &= this.style.colSeparator & $cell & " ".repeat(this.widths[colidx]-len(cell))
     result &= this.style.colSeparator
     result &= "\n"
     if this.separateRows and ridx < this.rows.len-1:
         result &= this.oneLine()
 
   result &= this.oneLineBottom()
-    
-  return result
 
-proc printTable*(this: ref TerminalTable) =
+proc printTable*(this: TerminalTable) =
   ## print table.
   echo(this.render())
 
@@ -249,7 +259,16 @@ when isMainModule:
   t2.addRow(@["3", "dr who", "Humans", "1018-5-2"])
   printTable(t2)
   t2.separateRows = false
-  let testStyle =  Style(rowSeparator:"┈", colSeparator:"┇", cellEdgeLeft:"├", cellEdgeRight:"┤", topLeft:"┏", topRight:"┓", bottomLeft:"└", bottomRight:"┘", topRowSeparator:"┬", bottomRowSeparator:"┴", dashLineLeft:"├", dashLineRight:"┤", dashLineColSeparatorLastRow:"┴", dashLineColSeparatorTopRow:"┬", dashLineColSeparator:"┼")
+  let testStyle = Style(
+    rowSeparator:"┈", colSeparator:"┇",
+    cellEdgeLeft:"├", cellEdgeRight:"┤",
+    topLeft:"┏", topRight:"┓",
+    bottomLeft:"└", bottomRight:"┘",
+    topRowSeparator:"┬", bottomRowSeparator:"┴",
+    dashLineLeft:"├", dashLineRight:"┤",
+    dashLineColSeparatorLastRow:"┴", dashLineColSeparatorTopRow:"┬",
+    dashLineColSeparator:"┼"
+  )
 
   t2.style = testStyle
   printTable(t2)
